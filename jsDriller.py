@@ -43,10 +43,6 @@ report = {
     "variables_inside_try": set(),
 }
 
-variable_count = \
-    [
-
-    ]
 
 
 for variable in variables:
