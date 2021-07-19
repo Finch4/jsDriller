@@ -1,17 +1,20 @@
 import re
 import base64
 import jsbeautifier
+import sys
+import itertools
 
 
 
 def return_function_name(function_content):
     return str(re.findall("(\\w+)\\(.*?\\)\\{", function_content))
 
-
-file_name = "test.txt"
+file_name = sys.argv[1]
+global variables_checked
+file_name = file_name
 file = open(file_name, "r").read()
-file = file.replace(" ", "").replace("\n","")
-
+file_lines = open(file_name, "r").readlines()
+file = file.replace(" ", "").replace("\n", "")
 
 normal_functions = re.findall("function(\w+)\(", file)
 functions_contents = re.findall("function(.*?\\(.*?\\){.*?})", file)
@@ -24,46 +27,79 @@ else_statements = re.findall("else{(.*?)}", file)
 strings = re.findall("\'.*?'|\".*?\"", file)
 
 report = {
-    "normal_functions": normal_functions,
-    "functions_contents": functions_contents,
-    "functions_inside_dictionaries": functions_inside_dictionaries,
-    "functions_as_variable": functions_as_variable,
-    "if_statements": if_statements,
-    "variables": set(variables),
-    "try_blocks": try_blocks,
-    "else_statements": else_statements,
-    "strings": strings,
-
-    # Not really working the regex
-    "base_64_strings": re.findall("(?:[A-Za-z0-9+\\/]{4}\\n?)*(?:[A-Za-z0-9+\\/]{2}==|[A-Za-z0-9+\\/]{3}=)", file),
+    
+    # "normal_functions": normal_functions,
+    # "functions_contents": functions_contents,
+    # "functions_inside_dictionaries": functions_inside_dictionaries,
+    # "functions_as_variable": functions_as_variable,
+    # "if_statements": if_statements,
+    # "variables": set(variables),
+    # "try_blocks": try_blocks,
+    # "else_statements": else_statements,
+    # "strings": strings,
+    #
+    # # Not really working the regex
+    # "base_64_strings": re.findall("(?:[A-Za-z0-9+\\/]{4}\\n?)*(?:[A-Za-z0-9+\\/]{2}==|[A-Za-z0-9+\\/]{3}=)", file),
 
     "variables_inside_functions": set(),
     "variables_inside_if": set(),
     "variables_inside_else": set(),
     "variables_inside_try": set(),
+
+    "inside_functions": 0,
+    "inside_if": 0,
+    "inside_else": 0,
+    "inside_try": 0,
 }
 
+variable_count = \
+    [
 
+    ]
 
+variables_checked = set()
+variables_checked2 = set()
 for variable in variables:
     for function_content in functions_contents:
         id = return_function_name(str(function_content))
         if variable in str(function_content):
-            report["variables_inside_functions"].add(
-                f"Variable {variable} found inside {return_function_name(str(function_content))}, count: {str(function_content).count(variable)}")
+            # report["variables_inside_functions"].add(f"Variable {variable} found inside {return_function_name(str(function_content))}, count: {str(function_content).count(variable)}")
+            report["variables_inside_functions"].add(variable)
+        report["inside_functions"] = len(report["variables_inside_functions"])
     for if_content in if_statements:
         if variable in if_content:
-            report["variables_inside_if"].add(f"Variable {variable} found inside {jsbeautifier.beautify(if_content)}, count: {str(if_content).count(variable)}")
+            report["variables_inside_if"].add(variable)
+        report["inside_if"] = len(report["variables_inside_if"])
     for else_content in else_statements:
         if variable in else_content:
-            report["variables_inside_else"].add(f"Variable {variable} found inside {else_content}, count: {str(else_content).count(variable)}")
+            report["variables_inside_else"].add(variable)
+        report["inside_else"] = len(report["variables_inside_else"])
     for try_content in try_blocks:
         if variable in try_content:
-            report["variables_inside_try"].add(f"Variable {variable} found inside {try_content}, , count: {str(try_content).count(variable)}")
+            report["variables_inside_try"].add(variable)
+        report["inside_try"] = len(report["variables_inside_try"])
 
-file = open(f"analysis_{file_name}.txt", "a")
-file.write(str(report) + "\n"*10)
-file.write(jsbeautifier.beautify_file(file_name))
-file.close()
+    line_count = 0
+    for line in file_lines:
+        line_count += 1
+        if variable in line.strip():
+            if file.count(variable) == 1:
+                variables_checked.add(f"{variable} is unused and found at {line_count}\n")
+                variables_checked2.add(variable)
 
-print(jsbeautifier.beautify(report["if_statements"][0]))
+js_beautify = jsbeautifier.beautify_file(file_name)
+for variable in variables_checked2:
+    js_beautify = str(js_beautify).replace(variable, "unused")
+
+print(f"""
+
+Report:
+{report} 
+
+Code:
+{js_beautify}
+
+Unused Variables:
+{list(variables_checked)}
+
+""")
