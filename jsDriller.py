@@ -1,3 +1,5 @@
+# jsDriller.py <file>
+
 import re
 import base64
 import jsbeautifier
