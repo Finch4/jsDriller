@@ -89,7 +89,7 @@ for variable in variables:
         line_count += 1
         if variable in line.strip():
             if file.count(variable) == 1:
-                variables_checked.add(f"{variable} is unused and found at {line_count}\n")
+                variables_checked.add(f"{variable} is unused and found at {line_count}")
                 variables_checked2.add(variable)
                 
 for function_content in functions_contents:
