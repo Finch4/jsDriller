@@ -9,7 +9,7 @@ import itertools
 
 
 def return_function_name(function_content):
-    return str(re.findall("(\\w+)\\(.*?\\)\\{", function_content))
+    return str(re.findall("(\\w+)\\(.*?\\)\\{", function_content)).replace("[", "").replace("'", "").replace("]", "")
 
 file_name = sys.argv[1]
 global variables_checked
@@ -61,6 +61,9 @@ variable_count = \
 
 variables_checked = set()
 variables_checked2 = set()
+functions_checked = set()
+functions_checked2 = set()
+
 for variable in variables:
     for function_content in functions_contents:
         id = return_function_name(str(function_content))
@@ -88,20 +91,31 @@ for variable in variables:
             if file.count(variable) == 1:
                 variables_checked.add(f"{variable} is unused and found at {line_count}\n")
                 variables_checked2.add(variable)
+                
+for function_content in functions_contents:
+    line_count = 0
+    for line in file_lines:
+        line_count += 1
+        function_name = return_function_name(function_content)
+        if function_name in line.strip():
+            if file.count(function_name) == 1:
+                functions_checked.add(f"Function {function_name} is unused and fount at {line_count}")
+                functions_checked.add(function_name)
+            
 
 js_beautify = jsbeautifier.beautify_file(file_name)
 for variable in variables_checked2:
     js_beautify = str(js_beautify).replace(variable, "unused")
+for function_name in functions_checked:
+    js_beautify = str(js_beautify).replace(function_name, "unused")
 
 print(f"""
-
 Report:
 {report} 
-
 Code:
 {js_beautify}
-
 Unused Variables:
 {list(variables_checked)}
-
+Unused Functions:
+{list(functions_checked)}
 """)
